@@ -578,6 +578,7 @@ bot.on('new_chat_members', async (msg) => {
         await bot.banChatMember(chatId, userId);
         await bot.unbanChatMember(chatId, userId);
         await bot.deleteMessage(chatId, sentMsg.message_id).catch(() => {});
+        await bot.sendMessage(chatId, `${mentionText} telah di kick karna tidak membalas pesan ku`, { parse_mode: 'HTML' });
       } catch (err) {}
       pendingVerifications.delete(`${chatId}_${userId}`);
     }, 10000);
