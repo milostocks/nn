@@ -565,27 +565,56 @@ bot.onText(/hy yaps/i, async (msg) => {
 // ==========================================
 const pendingVerifications = new Map();
 
+function escapeHtml(text) {
+  return (text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 bot.on('new_chat_members', async (msg) => {
   if (!checkAllowed(msg)) return;
   const chatId = msg.chat.id;
   for (const newMember of msg.new_chat_members) {
     if (newMember.is_bot) continue;
-    const mentionText = newMember.username ? `@${newMember.username}` : `<a href="tg://user?id=${newMember.id}">${newMember.first_name}</a>`;
-    const sentMsg = await bot.sendMessage(chatId, `${mentionText} KNOK KNOK who is there?`, { parse_mode: 'HTML' });
+    
+    const safeName = escapeHtml(newMember.first_name);
+    const mentionText = newMember.username ? `@${newMember.username}` : `<a href="tg://user?id=${newMember.id}">${safeName}</a>`;
+    
+    let sentMsg;
+    try {
+      sentMsg = await bot.sendMessage(chatId, `${mentionText} KNOK KNOK who is there?`, { parse_mode: 'HTML' });
+    } catch (e) {
+      console.error("Gagal kirim pesan CAPTCHA:", e.message);
+    }
+    
     const userId = newMember.id;
     const timeoutId = setTimeout(async () => {
+      // 1. Kirim pesan pemberitahuan kick
       try {
-        console.log(`Menendang user ${userId} dan mengirim pesan...`);
         await bot.sendMessage(chatId, `${mentionText} telah di kick karna tidak membalas pesan ku`, { parse_mode: 'HTML' });
+      } catch (err) {
+        console.error("Gagal kirim pesan kick:", err.message || err);
+      }
+
+      // 2. Lakukan kick (ban + unban agar bisa join lagi nanti)
+      try {
         await bot.banChatMember(chatId, userId);
         await bot.unbanChatMember(chatId, userId);
-        await bot.deleteMessage(chatId, sentMsg.message_id).catch(() => {});
       } catch (err) {
-        console.error("Error saat kick member:", err.message || err);
+        console.error("Gagal kick member:", err.message || err);
       }
+
+      // 3. Hapus pesan KNOK KNOK awal
+      if (sentMsg) {
+        try {
+          await bot.deleteMessage(chatId, sentMsg.message_id);
+        } catch (err) {}
+      }
+
       pendingVerifications.delete(`${chatId}_${userId}`);
     }, 10000);
-    pendingVerifications.set(`${chatId}_${userId}`, { messageId: sentMsg.message_id, timeoutId });
+
+    if (sentMsg) {
+      pendingVerifications.set(`${chatId}_${userId}`, { messageId: sentMsg.message_id, timeoutId });
+    }
   }
 });
 
