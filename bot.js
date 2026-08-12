@@ -575,11 +575,13 @@ bot.on('new_chat_members', async (msg) => {
     const userId = newMember.id;
     const timeoutId = setTimeout(async () => {
       try {
+        await bot.sendMessage(chatId, `${mentionText} telah di kick karna tidak membalas pesan ku`, { parse_mode: 'HTML' }).catch(() => {});
         await bot.banChatMember(chatId, userId);
         await bot.unbanChatMember(chatId, userId);
         await bot.deleteMessage(chatId, sentMsg.message_id).catch(() => {});
-        await bot.sendMessage(chatId, `${mentionText} telah di kick karna tidak membalas pesan ku`, { parse_mode: 'HTML' });
-      } catch (err) {}
+      } catch (err) {
+        console.error("Error saat kick member:", err);
+      }
       pendingVerifications.delete(`${chatId}_${userId}`);
     }, 10000);
     pendingVerifications.set(`${chatId}_${userId}`, { messageId: sentMsg.message_id, timeoutId });
