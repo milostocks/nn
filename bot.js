@@ -9,6 +9,16 @@ dotenv.config({ override: true });
 
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true });
 
+// Abaikan pesan usang yang diterima saat bot mati
+const BOT_START_TIME = Math.floor(Date.now() / 1000);
+const originalProcessUpdate = bot.processUpdate.bind(bot);
+bot.processUpdate = (update) => {
+  const msgDate = update.message?.date || update.callback_query?.message?.date;
+  if (msgDate && msgDate < BOT_START_TIME) return; // Abaikan pesan lama
+  originalProcessUpdate(update);
+};
+
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
