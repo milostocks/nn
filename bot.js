@@ -580,7 +580,7 @@ bot.on('new_chat_members', async (msg) => {
     
     let sentMsg;
     try {
-      sentMsg = await bot.sendMessage(chatId, `${mentionText} KNOK KNOK who is there?`, { parse_mode: 'HTML' });
+      sentMsg = await bot.sendMessage(chatId, `${mentionText} <b><i>KNOK KNOK who is there?</i></b>`, { parse_mode: 'HTML' });
     } catch (e) {
       console.error("Gagal kirim pesan CAPTCHA:", e.message);
     }
